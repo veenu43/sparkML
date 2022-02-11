@@ -47,7 +47,7 @@ def main():
     print(metrics.precision(1.0))
     print(metrics.precision(3.0))
     print(metrics.confusionMatrix().toArray())
-    print(model.toDebugString)
+    print(model.toDebugString())
 
 
 def parsePoint(line):
