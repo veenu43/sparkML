@@ -24,9 +24,12 @@ def main():
                                          numClasses=4,
                                          categoricalFeaturesInfo={},
                                          impurity='gini',
-                                         maxDepth=3,
+                                         maxDepth=5,
                                          maxBins=32)
+    print("Estimator",type(model))
     predictions = model.predict(testData.map(lambda x: x.features))
+    print("transformer", type(predictions))
+    predictions
     print(predictions)
     print(predictions.take(5))
     lablesAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
