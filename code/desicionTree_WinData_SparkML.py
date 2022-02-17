@@ -33,7 +33,7 @@ def main():
     evaluator = MulticlassClassificationEvaluator(labelCol='indexLabel',predictionCol='prediction',metricName='f1')
     transformed_data = model.transform(testData)
     print(transformed_data.show(5))
-    print(evaluator.getMetricName,'accuracy:',evaluator.evaluate(transformed_data))
+    print(evaluator.getMetricName(),'accuracy:',evaluator.evaluate(transformed_data))
 
 def vectorize(data):
     return data.rdd.map(lambda r: [r[0], Vectors.dense(r[1:])]).toDF(['label', 'features'])
