@@ -8,12 +8,13 @@ from pyspark.ml.regression import LinearRegression
 from pyspark.ml import Pipeline
 from pyspark.sql.types import FloatType
 
+
 def main():
     spark = SparkSession.builder.appName('Predicting the price of an automobile given a set of features').getOrCreate()
 
     rawData = spark.read.format('csv').option('header', 'true').load('../datasets/imports-85.data')
     print(rawData.show(5))
-    #print(rawData.toPandas().head())
+    # print(rawData.toPandas().head())
     '''
     dataset = rawData.withColumn('price', rawData['price'].cast(FloatType()))
     dataset = dataset.withColumn('make', dataset['make'].cast(FloatType()))
@@ -106,7 +107,7 @@ def main():
     print("Predictions", predictions.show(5))
     print("Predictions", predictions.toPandas().head())
     print("Predictions Features", predictions.toPandas()['features'][0])
-    evaluator = RegressionEvaluator(labelCol='price',predictionCol='prediction',metricName='r2')
+    evaluator = RegressionEvaluator(labelCol='price', predictionCol='prediction', metricName='r2')
     r2 = evaluator.evaluate(predictions)
     print('Test R^2 score =', r2)
     evaluator = RegressionEvaluator(labelCol='price', predictionCol='prediction', metricName='rmse')
@@ -118,12 +119,38 @@ def main():
     ).toPandas()
     print(predictionsPanadasDF.head())
 
+    # Plot
     import matplotlib.pyplot as plt
-    plt.figure(figsize=(15,6))
-    plt.plot(predictionsPanadasDF['price'],label='Actual')
+    plt.figure(figsize=(15, 6))
+    plt.plot(predictionsPanadasDF['price'], label='Actual')
     plt.plot(predictionsPanadasDF['prediction'], label='Predicted')
     plt.ylabel("Price")
     plt.legend()
     plt.show()
+
+    # Hperparameter tuning
+    from pyspark.ml.tuning import ParamGridBuilder
+
+    # ParamGridBuilder allows different values of design parameters
+    # maxIter = epochs
+    # regParam = regularization parameters
+    # elasticNetParam = less to ridge model
+    paramGrid = ParamGridBuilder().addGrid(
+        lr.maxIter,[10, 50, 100]).addGrid(
+        lr.regParam, [0.1, 0.3, 1.0]).addGrid(lr.elasticNetParam, [0.0, 0.8, 1.0]).build()
+    evaluator = RegressionEvaluator(labelCol='price', predictionCol='prediction', metricName='rmse')
+
+    from pyspark.ml.tuning import CrossValidator
+    # CrossValidator method by which train model on set of data and test it on another set of data
+    crossval = CrossValidator(estimator=pipeline,
+                              estimatorParamMaps=paramGrid,
+                              evaluator=evaluator,
+                              numFolds=3)
+    model - crossval.fit(trainingData)
+    lrModel = model.bestModel.stages[-1]
+    print(lrModel)
+    print("maxIter: " , lrModel._java_obj.getMaxIter())
+    print("maxIter: ", lrModel._java_obj.getMaxIter())
+    print("maxIter: ", lrModel._java_obj.getMaxIter())
 if __name__ == '__main__':
     main()
