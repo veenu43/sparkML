@@ -81,6 +81,8 @@ userMovieList = userRecs.filter(userRecs.userId == 148).select('recommendations'
 # One row for each user containing recommendations for that user
 # each row in turn contains a recommendations column which is a list of Rows
 userMovieList.collect()
+
+# Extract the recommendations for the first (in our case only) user in the list
 moviesList = userMovieList.collect()[0].recommendations
 print(moviesList)
 
@@ -88,4 +90,17 @@ print(moviesList)
 moviesDF = spark.createDataFrame(moviesList)
 moviesDF.toPandas()
 
+moviesData = spark.read.format('csv').option("header", "true").load('../../datasets/movielens/movies.csv')
+moviesData.show(5)
 
+#Top 5 movie recommendations for user #148
+recommendedMoviews = moviesData.join(moviesDF,on=['movieId']).orderBy('rating',ascending=False).select('title','genres','rating')
+recommendedMoviews.show(5)
+
+
+#Wrap all the steps for getting movie recommendations into one function
+
+from pyspark.sql.types import IntegerType
+
+def getRecommendationsForUser(userId,numRecs):
+    usersDF = spark.createDataFrame([userId],IntegerType()).toDF('userId')
