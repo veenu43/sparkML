@@ -82,7 +82,7 @@ userMovieList = userRecs.filter(userRecs.userId == 148).select('recommendations'
 # each row in turn contains a recommendations column which is a list of Rows
 userMovieList.collect()
 
-# Extract the recommendations for the first (in our case only) user in the list
+# Extract the movie recommendations for the first (in our case only) user in the list
 moviesList = userMovieList.collect()[0].recommendations
 print(moviesList)
 
@@ -104,3 +104,12 @@ from pyspark.sql.types import IntegerType
 
 def getRecommendationsForUser(userId,numRecs):
     usersDF = spark.createDataFrame([userId],IntegerType()).toDF('userId')
+    userRecs = model.recommendForUserSubset(usersDF,numRecs)
+
+    moviesList = userRecs.collect()[0].recommendations
+    moviesDF = spark.createDataFrame(moviesList)
+
+    recommendedMoviews = moviesData.join(moviesDF,on=['movieId'])\
+                        .orderBy('rating',ascending=False)\
+                        .select('title','genres','rating')
+    return recommendedMoviews
