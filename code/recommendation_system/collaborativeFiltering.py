@@ -38,7 +38,7 @@ predictions = model.transform(testData)
 # predictions.show(5)
 
 # compare the distribution of actual and predicted ratings in test data
-print(predictions.select('rating', 'prediction').toPandas().describe())
+# print(predictions.select('rating', 'prediction').toPandas().describe())
 
 from pyspark.ml.evaluation import RegressionEvaluator
 
@@ -50,18 +50,18 @@ evaluator = RegressionEvaluator(
 )
 
 rmse = evaluator.evaluate(predictions)
-print("RMSE = ", rmse)
+# print("RMSE = ", rmse)
 
 # top 3 movie recommendation for users
 # recommendations are a list of (movieID,rating) tuples
 userRecsAll = model.recommendForAllUsers(3)
-print(userRecsAll)
-print(userRecsAll.toPandas().head())
+# print(userRecsAll)
+# print(userRecsAll.toPandas().head())
 
 # Also view the users most likely to like a movie.This function returns the top 3 users for each movie
 movieRecsAll = model.recommendForAllItems(3)
-print(movieRecsAll)
-print(movieRecsAll.toPandas().head())
+# print(movieRecsAll)
+# print(movieRecsAll.toPandas().head())
 
 from pyspark.sql.types import IntegerType
 
@@ -72,8 +72,8 @@ usersDF.take(3)
 
 # top 5 movie recommendations are a list of (movieID,rating) tuples for user set
 userRecs = model.recommendForUserSubset(usersDF, 5)
-print(userRecs)
-print(userRecs.toPandas().head())
+# print(userRecs)
+# print(userRecs.toPandas().head())
 
 # Extract recommendations for single user into a Spark dataframe
 userMovieList = userRecs.filter(userRecs.userId == 148).select('recommendations')
@@ -84,32 +84,39 @@ userMovieList.collect()
 
 # Extract the movie recommendations for the first (in our case only) user in the list
 moviesList = userMovieList.collect()[0].recommendations
-print(moviesList)
+# print(moviesList)
 
 # create a DF containing the movieID and rating in separate columns
 moviesDF = spark.createDataFrame(moviesList)
 moviesDF.toPandas()
 
 moviesData = spark.read.format('csv').option("header", "true").load('../../datasets/movielens/movies.csv')
-moviesData.show(5)
+#moviesData.show(5)
 
-#Top 5 movie recommendations for user #148
-recommendedMoviews = moviesData.join(moviesDF,on=['movieId']).orderBy('rating',ascending=False).select('title','genres','rating')
-recommendedMoviews.show(5)
+# Top 5 movie recommendations for user #148
+recommendedMoviews = moviesData.join(moviesDF, on=['movieId']).orderBy('rating', ascending=False).select('title',
+                                                                                                         'genres',
+                                                                                                         'rating')
+#recommendedMoviews.show(5)
 
-
-#Wrap all the steps for getting movie recommendations into one function
+# Wrap all the steps for getting movie recommendations into one function
 
 from pyspark.sql.types import IntegerType
 
-def getRecommendationsForUser(userId,numRecs):
-    usersDF = spark.createDataFrame([userId],IntegerType()).toDF('userId')
-    userRecs = model.recommendForUserSubset(usersDF,numRecs)
+
+# Function to warps all above steps for getting movie recommendations into one function
+def getRecommendationsForUser(userId, numRecs):
+    usersDF = spark.createDataFrame([userId], IntegerType()).toDF('userId')
+    userRecs = model.recommendForUserSubset(usersDF, numRecs)
 
     moviesList = userRecs.collect()[0].recommendations
     moviesDF = spark.createDataFrame(moviesList)
 
-    recommendedMoviews = moviesData.join(moviesDF,on=['movieId'])\
-                        .orderBy('rating',ascending=False)\
-                        .select('title','genres','rating')
+    recommendedMoviews = moviesData.join(moviesDF, on=['movieId']) \
+        .orderBy('rating', ascending=False) \
+        .select('title', 'genres', 'rating')
     return recommendedMoviews
+
+
+recommendedForUser = getRecommendationsForUser(219, 10)
+recommendedForUser.show(5)
